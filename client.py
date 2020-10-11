@@ -3,15 +3,16 @@ import pygame
 import json
 
 pygame.mixer.init()
-pygame.mixer.music.load('chloe.mp3')
+pygame.mixer.music.load('stay.mp3')
 
 s = socket.socket()
 host = socket.gethostname()
 port = 9077
 s.connect((host, port))
 
+print(s.recv(1024).decode())
 while True:
-    received = s.recv(1024).decode()
+    received = s.recv(100).decode()
     if received == 'play':
         print("Starting playback...")
         pygame.mixer.music.play(1)
@@ -28,6 +29,8 @@ while True:
         print("## connection closed ##")
         pygame.mixer.music.stop()
         break
+
+
 
 # print(d)
 
