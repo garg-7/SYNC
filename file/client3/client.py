@@ -17,6 +17,30 @@ s.connect((host, port))
 songInput = input('What song you want to suggest to be played ..')
 s.send(songInput.encode())
 
+songDecide = s.recv(100).decode()
+
+if(songDecide == 'songAlreadyReceived') :
+    print('The song that is to be played is present on the server endpoint') 
+else :
+    print('The song that is to be played is not present on the server endpoint') 
+    if(os.path.isfile(songDecide)) :
+        print('The song that is to be played is present on this endpoint') 
+        songPresent='yes'
+        s.send(songPresent.encode()) 
+    
+        print('Initialting transfer of the song to the server endpoint')
+        file = open(songDecide , 'rb')
+        file_data = file.read(110241024)
+        s.send(file_data)
+        print('Song has been transferred successfully')
+        print('The song that is to be played is now present on the server endpoint') 
+        
+    else : 
+        print('The song that is to be played is not present on this endpoint') 
+        songPresent='no'
+        s.send(songPresent.encode()) 
+    
+
 songSelect = s.recv(100).decode()
 
 if(os.path.isfile(songSelect)) :
