@@ -12,3 +12,4 @@ web-build/
 
 # macOS
 .DS_Store
+GUI/__pycache__/f.cpython-38.pyc
