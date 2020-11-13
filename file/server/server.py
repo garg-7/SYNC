@@ -8,6 +8,7 @@ import os
 pygame.mixer.init()
 # pygame.mixer.music.load('stay.mp3')
 
+MUSIC_DIR = 'music'
 s = socket.socket()
 host = socket.gethostname()
 port = 9077
@@ -18,90 +19,91 @@ s.listen()
 def doOpn(clientsocket, cmd):
     clientsocket.send(cmd.encode())
 
-networkCount=input('How many other devices do you want to connect?')
-networkCount=int(networkCount)
+networkCount = input("How many clients do you want to allow?")
+networkCount = int(networkCount)
 
 ID = 0
 clients = []
 while ID<networkCount:
     clientsocket, address = s.accept()
-    clients.append(clientsocket)
+    clients.append((clientsocket, address))
     # clientsocket.send(s.encode())
     # start_new_thread(pingClient(), (clientsocket, ID))
     print(f"Connected with {address}, allotted ID={ID}")
     ID+=1
 
 for c in clients:
-    songs=c.recv(1024).decode()
-    print (songs)
+    songs=c[0].recv(1024).decode()
+    print(songs)
     
-songSelect = input('Enter the song to be played (followed by the file extension)')
+songSelect = input("Enter the song to be played (followed by the file extension)")
 
-print('Checking if server end point has the song')
+print("Checking if server end point has the song.")
 
-if(os.path.isfile(songSelect)) :
-    print ('Song is already present on the server endpoint')
-    for c in clients : 
-        songAlreadyReceived= 'songAlreadyReceived'
-        c.send(songAlreadyReceived.encode())
+if(os.path.isfile(os.path.join(MUSIC_DIR, songSelect))) :
+    print ("Song is already present on the server endpoint")
+    for c in clients :
+        c[0].send('songAlreadyReceived'.encode())
 else : 
-    print('Song is not present on the server endpoint')
+    print("Song is not present on the server endpoint")
     for c in clients:
-        if(os.path.isfile(songSelect)) :
-            songAlreadyReceived= 'songAlreadyReceived'
-            c.send(songAlreadyReceived.encode())
+        c[0].send(songSelect.encode())            
+        songPresent=c[0].recv(1024).decode()       
+        if(songPresent == 'yes'):
+            if not os.path.isfile(os.path.join(MUSIC_DIR, songSelect)):
+                print (f"Client {c[1]} has the song")
+                print ("Receiving the song from " , c[1])
+            filename = songSelect
+            f = open(filename, 'wb')
+            file_data = c[0].recv(110241024)
+            f.write(file_data)
+            f.close()
+            if not os.path.isfile(os.path.join(MUSIC_DIR, songSelect)):
+                print ("Song successfully received from ", c[1])
+                print ("The server now has the song file to be played.")
         else :
-            c.send(songSelect.encode())
-            songPresent=c.recv(1024).decode()
-            print ('input 1      ', songPresent)
-            if(songPresent == 'yes') :
-                print ('Song is present on ' , c)
-                print ('Receiving song from ' , c)
-                filename = songSelect
-                file = open(filename, 'wb')
-                file_data = c.recv(110241024)
-                file.write(file_data)
-                file.close()
-                print ('Song transfering completed from ' , c)
-                print ('The server endpoint has the requested song now')
-            else :
-                print ('Song is not present on ' , c)
+            print (f"Client {c[1]} does not have the song")
 
-if(os.path.isfile(songSelect)) :
-    pygame.mixer.music.load(songSelect)
+if(os.path.isfile(songSelect)) :           
+    pygame.mixer.music.load(songSelect)    
 
     for c in clients:
-        c.send(songSelect.encode())
-        songPresent=c.recv(1024).decode()
-        if(songPresent == 'yes') :
-            print('song is present in ' , c)
+        c[0].send("Continue".encode())
+
+    print("Veryifying whether all the clients have the song.")
+    for c in clients:
+        c[0].send(songSelect.encode())         # send the song name to every client
+        songPresent=c[0].recv(1024).decode()   # receive whether the song is present there or not
+        if(songPresent == 'yes') :      
+            print(f"{songSelect.split('.')[0]} is present in ", c[1])
         else : 
-            print('transferring song to ' , c)
-            file = open(songSelect , 'rb')
-            file_data = file.read(110241024)
-            c.send(file_data)
-            print('song transferred to ' , c)
-        
+            print("Transferring song to ", c[1])
+            f = open(songSelect , 'rb')
+            file_data = f.read(110241024)
+            c[0].send(file_data)
+            print("Song transferred to ", c[1])
     while True:
-        cmd = input('What do you want to do? (play/pause/resume/stop/end)')    
-        
+        cmd = input('What do you want to do? (play/pause/resume/stop/end)')
         for c in clients:
-            start_new_thread(doOpn, (c, cmd))
-        
+            start_new_thread(doOpn, (c[0], cmd))
+        # adding suitable delay
+        # time.sleep(0.21)
         if cmd == 'play':
             print("Starting playback...")
-            pygame.mixer.music.play(1)
+            pygame.mixer.music.play()
         elif cmd == 'pause':
-            print("|| Playback paused ||")
+            print("Playback paused...")
             pygame.mixer.music.pause()
         elif cmd == 'resume':
-            print("Resumed playback...")
+            print("Playback resumed...")
             pygame.mixer.music.unpause()
         elif cmd == 'stop':
-            print("* Playback stopped *")
+            print("Playback stopped.")
             pygame.mixer.music.stop()
         elif cmd == 'end':
-            print("connection(s) closed.")
+            print("Connection(s) closed.")
             break
 else :
-    print('Song is not present at any of the endpoint of the server')
+    print("Song is not present on the server and could not be obtained from any client.")
+    for c in clients:
+        c[0].send("Stop".encode())
