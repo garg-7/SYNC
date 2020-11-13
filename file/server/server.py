@@ -35,7 +35,7 @@ while ID<networkCount:
 for c in clients:
     songs=c[0].recv(1024).decode()
     print(songs)
-    
+
 songSelect = input("Enter the song to be played (followed by the file extension)")
 
 print("Checking if server end point has the song.")
@@ -44,16 +44,16 @@ if(os.path.isfile(os.path.join(MUSIC_DIR, songSelect))) :
     print ("Song is already present on the server endpoint")
     for c in clients :
         c[0].send('songAlreadyReceived'.encode())
-else : 
+else :
     print("Song is not present on the server endpoint")
     for c in clients:
-        c[0].send(songSelect.encode())            
-        songPresent=c[0].recv(1024).decode()       
+        c[0].send(songSelect.encode())
+        songPresent=c[0].recv(1024).decode()
         if(songPresent == 'yes'):
             if not os.path.isfile(os.path.join(MUSIC_DIR, songSelect)):
                 print (f"Client {c[1]} has the song")
                 print ("Receiving the song from " , c[1])
-            filename = songSelect
+            filename = os.path.join(MUSIC_DIR, songSelect)
             f = open(filename, 'wb')
             file_data = c[0].recv(110241024)
             f.write(file_data)
@@ -64,8 +64,8 @@ else :
         else :
             print (f"Client {c[1]} does not have the song")
 
-if(os.path.isfile(songSelect)) :           
-    pygame.mixer.music.load(songSelect)    
+if os.path.isfile(os.path.join(MUSIC_DIR, songSelect)) :
+    pygame.mixer.music.load(os.path.join(MUSIC_DIR, songSelect))
 
     for c in clients:
         c[0].send("Continue".encode())
@@ -74,11 +74,11 @@ if(os.path.isfile(songSelect)) :
     for c in clients:
         c[0].send(songSelect.encode())         # send the song name to every client
         songPresent=c[0].recv(1024).decode()   # receive whether the song is present there or not
-        if(songPresent == 'yes') :      
+        if(songPresent == 'yes') :
             print(f"{songSelect.split('.')[0]} is present in ", c[1])
-        else : 
+        else :
             print("Transferring song to ", c[1])
-            f = open(songSelect , 'rb')
+            f = open(os.path.join(MUSIC_DIR, songSelect) , 'rb')
             file_data = f.read(110241024)
             c[0].send(file_data)
             print("Song transferred to ", c[1])
