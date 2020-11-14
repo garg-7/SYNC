@@ -26,14 +26,14 @@ if(songDecide == 'songAlreadyReceived') :
 else :
 
     print("The song that is to be played is not present on the server.")
-    if os.path.isfile(os.path.join(MUSIC_DIR, songSelect)) :
+    if os.path.isfile(os.path.join(MUSIC_DIR, songDecide)) :
 
         print('The song that is to be played is present on this client')
         songPresent='yes'
         s.send(songPresent.encode())
 
         print('Sending the song file to the server endpoint')
-        f = open(os.path.join(MUSIC_DIR, songSelect) , 'rb')
+        f = open(os.path.join(MUSIC_DIR, songDecide) , 'rb')
         file_data = f.read(110241024)
         s.send(file_data)
 
@@ -49,7 +49,9 @@ toContinue = s.recv(100).decode()
 if toContinue=='Continue':
     songSelect = s.recv(100).decode()
 
-    if os.path.isfile(os.path.join(MUSIC_DIR, songSelect)) :
+    # if os.path.isfile(os.path.join(MUSIC_DIR, songSelect)) :
+    if os.path.isfile(songSelect) :
+    
         songPresent='yes'
         s.send(songPresent.encode())
         print('The song is present on this client.')
@@ -57,7 +59,8 @@ if toContinue=='Continue':
         songPresent='no'
         s.send(songPresent.encode())
         print("The song to be played is not present on this client, receiving the file from the server...")
-        filename = os.path.join(MUSIC_DIR, songSelect)
+        # filename = os.path.join(MUSIC_DIR, songSelect)
+        filename = songSelect
         f = open(filename, 'wb')
         file_data = s.recv(110241024)
         f.write(file_data)
