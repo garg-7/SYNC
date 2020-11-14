@@ -49,8 +49,8 @@ toContinue = s.recv(100).decode()
 if toContinue=='Continue':
     songSelect = s.recv(100).decode()
 
-    # if os.path.isfile(os.path.join(MUSIC_DIR, songSelect)) :
-    if os.path.isfile(songSelect) :
+    if os.path.isfile(os.path.join(MUSIC_DIR, songSelect)) :
+    # if os.path.isfile(songSelect) :
     
         songPresent='yes'
         s.send(songPresent.encode())
@@ -59,15 +59,15 @@ if toContinue=='Continue':
         songPresent='no'
         s.send(songPresent.encode())
         print("The song to be played is not present on this client, receiving the file from the server...")
-        # filename = os.path.join(MUSIC_DIR, songSelect)
-        filename = songSelect
+        filename = os.path.join(MUSIC_DIR, songSelect)
+        # filename = songSelect
         f = open(filename, 'wb')
         file_data = s.recv(110241024)
         f.write(file_data)
         f.close()
         print("The song file has been received successfully.")
 
-    pygame.mixer.music.load(songSelect)
+    pygame.mixer.music.load(os.path.join(MUSIC_DIR, songSelect))
     while True:
 
         received = s.recv(100).decode()
