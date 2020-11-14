@@ -10,7 +10,7 @@ MAX_CLIENTS = 2
 MUSIC_PATH = 'music'
 
 def sendOpn(clientSocket, cmd):
-    clientSocket.send(cmd.encode())
+    clientSocket.send(cmd.encode('UTF-8').strip())
 
 class Main(QMainWindow, Ui_Main):
     def __init__(self, host, port, maxClients, parent=None ):
