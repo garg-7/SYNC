@@ -31,7 +31,8 @@ while ID<networkCount:
     # start_new_thread(pingClient(), (clientsocket, ID))
     print(f"Connected with {address}, allotted ID={ID}")
     ID+=1
-
+    
+print("Following are the song recommendations by the client servers ")
 for c in clients:
     songs=c[0].recv(1024).decode()
     print(songs)
