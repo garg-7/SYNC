@@ -8,7 +8,7 @@ There are two versions for this tool as mentioned below. The command-line versio
 The libraries needed are - `pygame` and `PyQt5`. They can be installed via pip.
 ```bash
 python -m pip install pygame==2.0.0
-python -m pip install pyqt==5.15.1
+python -m pip install pyqt5==5.15.1
 ```
 (Note: The versions used at the time of development are specified above.)
 
