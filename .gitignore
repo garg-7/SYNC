@@ -9,7 +9,8 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
-
+*.mp3
+*/__pycache__/*
+*/.init
 # macOS
 .DS_Store
-GUI/__pycache__/f.cpython-38.pyc
