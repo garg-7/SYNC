@@ -1,46 +1,57 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from PyQt5.QtWidgets import QLabel, QRadioButton, QPushButton, QLineEdit, QButtonGroup, QComboBox
-from PyQt5.QtWidgets import QGridLayout
+from PyQt5.QtWidgets import QWidget, QLabel, QRadioButton, QPushButton, QLineEdit, QButtonGroup, QComboBox, QSpinBox
+from PyQt5.QtWidgets import QGridLayout, QStackedLayout
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sys, os
 
 MUSIC_PATH = 'music'
 class Ui_Main(QtWidgets.QWidget):
-    def setupUi(self, Main, host, port, maxClients):
+    def setupUi(self, Main, host):
         Main.setObjectName("Main")
         self.sHost = host               # host name of server
-        self.sPort = port               # port at which server accepts connections
-        self.maxClients = maxClients    # max number of clients to connect with the server
-        self.QtStack = QtWidgets.QStackedLayout()
+        # self.sPort = port               # port at which server accepts connections
+        self.maxClients = 0    # max number of clients to connect with the server
+        self.QtStack = QStackedLayout()
 
-        self.stack1 = QtWidgets.QWidget()   # the main screen
-        self.stack2 = QtWidgets.QWidget()   # server intro
-        self.stack3 = QtWidgets.QWidget()   # client enter info
-        self.stack4 = QtWidgets.QWidget()   # client connected
-        self.stack5 = QtWidgets.QWidget()   # server w/ client list and verify
-        self.stack6 = QtWidgets.QWidget()   # server player
+        self.stack0 = QWidget()   # the main screen
+        self.stack1 = QWidget()   # server port and clients entry
+        self.stack2 = QWidget()   # client enter info
+        self.stack3 = QWidget()   # client connected
+        self.stack4 = QWidget()   # server proceed btn display
+        self.stack5 = QWidget()   # server music select
+        self.stack6 = QWidget()   # server player
+        self.stack7 = QWidget()   # error window
 
         # initialize UI windows
         self.startUI()
-        self.serverUI(host, port)
+        self.serverInit()
         self.clientUI()
         self.clientConnectedUI()
-        self.clientsFileVerify()
-        self.clientsListUI()
+        self.errorDisp()
 
         # add UI windows to Qt Stack
+        self.QtStack.addWidget(self.stack0)
         self.QtStack.addWidget(self.stack1)
         self.QtStack.addWidget(self.stack2)
         self.QtStack.addWidget(self.stack3)
         self.QtStack.addWidget(self.stack4)
         self.QtStack.addWidget(self.stack5)
         self.QtStack.addWidget(self.stack6)
+        self.QtStack.addWidget(self.stack7)
+        
+        
+    def finishUI(self):
+        # initialize remaining UI windows
+        self.serverUI(self.sHost, self.sPort)
+        self.clientsFileVerify()
+        self.clientsListUI()
+        return
 
     def startUI(self):
-        self.stack1.setFixedSize(500,200)
-        self.stack1.setWindowTitle("Sync")
+        self.stack0.setFixedSize(500,200)
+        self.stack0.setWindowTitle("Sync")
         
         # Intro msg
         self.intro = QLabel("What do you want to be?")
@@ -76,15 +87,93 @@ class Ui_Main(QtWidgets.QWidget):
         self.layout.addWidget(self.serverBtn, 1,0, Qt.AlignCenter)
         self.layout.addWidget(self.clientBtn, 1,2, Qt.AlignCenter)
         self.layout.addWidget(self.nextBtn, 3,1)
-        self.stack1.setLayout(self.layout)
+        self.stack0.setLayout(self.layout)
+        return
 
+    def serverInit(self):
+        self.stack1.setFixedSize(500,200)
+        self.stack1.setWindowTitle("Sync")
+        
+        # Server intro message
+        self.sIIntro = QLabel("Operating as a server")
+        self.sIIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
 
-    def serverUI(self, host, port):
+        # port helper
+        self.sIPortKey = QLabel("Port to listen on: ")
+        self.sIPortKey.setStyleSheet("font-size: 20px; qproperty-alignment: AlignLeft; font-family: Helvetica, Arial")
+
+        # port helper
+        self.sIPortVal = QSpinBox()
+        self.sIPortVal.setValue(9077)
+        self.sIPortVal.setMaximum(65535)
+        self.sIPortVal.setMinimum(1024)
+
+        # helper label
+        self.sIHelper = QLabel("Number of clients: ")
+        self.sIHelper.setStyleSheet("font-size: 20px; qproperty-alignment: AlignLeft; font-family: Helvetica, Arial")
+
+        # text field for number of clients
+        self.sIBox = QSpinBox()
+        self.sIBox.setValue(2)
+        self.sIBox.setMaximum(16)
+        self.sIBox.setMinimum(1)
+
+        # next Btn
+        self.sNextBtn = QPushButton("Next")
+        self.sNextBtn.setStyleSheet("font-size: 14px; font-family: Helvetica, Arial")
+
+        # Integrate grid layout
+        self.sILayout = QGridLayout()
+        self.sILayout.addWidget(self.sIIntro, 0,0,1,3)
+        self.sILayout.addWidget(self.sIPortKey, 1,0,1,2)
+        self.sILayout.addWidget(self.sIPortVal, 1,1,1,2)
+        self.sILayout.addWidget(self.sIHelper, 2,0,1,2)
+        self.sILayout.addWidget(self.sIBox, 2,1,1,2)
+        self.sILayout.addWidget(self.sNextBtn, 3,1)
+        self.stack1.setLayout(self.sILayout)
+        return
+
+    def clientUI(self):
         self.stack2.setFixedSize(500,200)
         self.stack2.setWindowTitle("Sync")
         
+        # client intro message
+        self.cIntro = QLabel("Operating as a client")
+        self.cIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
+        
+        # Client host key & val
+        self.cHostKey = QLabel("Host: ")
+        self.cHostKey.setStyleSheet("font-size: 20px; qproperty-alignment: AlignHCenter; font-family: Helvetica, Arial")
+        self.cHostVal = QLineEdit()
+        self.cHostVal.setPlaceholderText("Say Dell-G3")
+        
+        # Client port key & val
+        self.cPortKey = QLabel("Port: ")
+        self.cPortKey.setStyleSheet("font-size: 20px; qproperty-alignment: AlignHCenter; font-family: Helvetica, Arial")
+        self.cPortVal = QLineEdit()
+        self.cPortVal.setPlaceholderText("Say 9077")
+        
+        # client connect button
+        self.cntBtn = QPushButton("Connect")
+        self.cntBtn.setStyleSheet("font-size: 14px; font-family: Helvetica, Arial")
+
+        # Integrate grid layout
+        self.cLayout = QGridLayout()
+        self.cLayout.addWidget(self.cIntro, 0,0,1,3)
+        self.cLayout.addWidget(self.cHostKey, 1,0)
+        self.cLayout.addWidget(self.cHostVal, 1,1,1,2)
+        self.cLayout.addWidget(self.cPortKey, 2,0)
+        self.cLayout.addWidget(self.cPortVal, 2,1,1,2)
+        self.cLayout.addWidget(self.cntBtn, 4,1)
+        self.stack2.setLayout(self.cLayout)
+        return
+
+    def serverUI(self, host, port):
+        self.stack3.setFixedSize(500,200)
+        self.stack3.setWindowTitle("Sync")
+        
         # Server intro message
-        self.sIntro = QtWidgets.QLabel("Operating as a server")
+        self.sIntro = QLabel("Operating as a server")
         self.sIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
         
         # Server host key & val
@@ -116,48 +205,15 @@ class Ui_Main(QtWidgets.QWidget):
         self.sLayout.addWidget(self.sPortVal, 2,1)
         self.sLayout.addWidget(self.sMsg, 3,0,1,3)
         self.sLayout.addWidget(self.proBtn, 4, 1)
-        self.stack2.setLayout(self.sLayout)
+        self.stack3.setLayout(self.sLayout)
+        return
 
-    def clientUI(self):
-        self.stack3.setFixedSize(500,200)
-        self.stack3.setWindowTitle("Sync")
-        
-        # client intro message
-        self.cIntro = QLabel("Operating as a client")
-        self.cIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
-        
-        # Client host key & val
-        self.cHostKey = QLabel("Host: ")
-        self.cHostKey.setStyleSheet("font-size: 20px; qproperty-alignment: AlignHCenter; font-family: Helvetica, Arial")
-        self.cHostVal = QLineEdit()
-        self.cHostVal.setPlaceholderText("Say Dell-G3")
-        
-        # Client port key & val
-        self.cPortKey = QLabel("Port: ")
-        self.cPortKey.setStyleSheet("font-size: 20px; qproperty-alignment: AlignHCenter; font-family: Helvetica, Arial")
-        self.cPortVal = QLineEdit()
-        self.cPortVal.setPlaceholderText("Say 9077")
-        
-        # client connect button
-        self.cntBtn = QPushButton("Connect")
-        self.cntBtn.setStyleSheet("font-size: 14px; font-family: Helvetica, Arial")
-
-        # Integrate grid layout
-        self.cLayout = QGridLayout()
-        self.cLayout.addWidget(self.cIntro, 0,0,1,3)
-        self.cLayout.addWidget(self.cHostKey, 1,0)
-        self.cLayout.addWidget(self.cHostVal, 1,1,1,2)
-        self.cLayout.addWidget(self.cPortKey, 2,0)
-        self.cLayout.addWidget(self.cPortVal, 2,1,1,2)
-        self.cLayout.addWidget(self.cntBtn, 4,1)
-        self.stack3.setLayout(self.cLayout)
-    
     def clientConnectedUI(self):
         self.stack4.setFixedSize(500,200)
         self.stack4.setWindowTitle("Sync")
 
         # client intro message
-        self.cCIntro =  QtWidgets.QLabel("Operating as a client")
+        self.cCIntro =  QLabel("Operating as a client")
         self.cCIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
         
         # Client welcome msg
@@ -169,13 +225,14 @@ class Ui_Main(QtWidgets.QWidget):
         self.cCLayout.addWidget(self.cCIntro, 0,0,1,3)
         self.cCLayout.addWidget(self.cConnected, 1,0,1,3)
         self.stack4.setLayout(self.cCLayout)
+        return
 
     def clientsFileVerify(self):
         self.stack5.setFixedWidth(500)
         self.stack5.setWindowTitle("Sync")
         
         # Server intro message
-        self.cFVIntro = QtWidgets.QLabel("Operating as a server")
+        self.cFVIntro = QLabel("Operating as a server")
         self.cFVIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
         
         # Server host key & val
@@ -228,13 +285,14 @@ class Ui_Main(QtWidgets.QWidget):
         self.cFVLayout.addWidget(self.vfyBtn, self.maxClients+5,1)
 
         self.stack5.setLayout(self.cFVLayout)
+        return
 
     def clientsListUI(self):
         self.stack6.setFixedWidth(500)
         self.stack6.setWindowTitle("Sync")
         
         # Server intro message
-        self.cLIntro = QtWidgets.QLabel("Operating as a server")
+        self.cLIntro = QLabel("Operating as a server")
         self.cLIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
         
         # Server host key & val
@@ -299,3 +357,23 @@ class Ui_Main(QtWidgets.QWidget):
         self.cLLayout.addWidget(self.backBtn, self.maxClients+6, 1)
         self.cLLayout.addWidget(self.endBtn, self.maxClients+7, 0, 1, 3)
         self.stack6.setLayout(self.cLLayout)
+
+        return
+
+    def errorDisp(self):
+        self.stack7.setFixedWidth(500)
+        self.stack7.setWindowTitle("Sync")
+        
+        # Server intro message
+        self.eIntro = QLabel("Operating as a server")
+        self.eIntro.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
+
+        # Server intro message
+        self.eMsg = QLabel()
+        self.eMsg.setStyleSheet("font-size: 20px; qproperty-alignment: AlignCenter; font-family: Helvetica, Arial")
+
+        self.eLayout = QGridLayout()
+        self.eLayout.addWidget(self.eIntro, 0,0,1,3)
+        self.eLayout.addWidget(self.eMsg, 1,0,1,3)
+        self.stack7.setLayout(self.eLayout)
+        return

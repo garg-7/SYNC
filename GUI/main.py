@@ -5,29 +5,39 @@ import time, sys, socket, pygame, os
 from PyQt5.QtCore import QRunnable, QThreadPool
 from gui import Ui_Main
 
-PORT = 9077
-MAX_CLIENTS = 2
+# PORT = 9077
+# MAX_CLIENTS = 2
 MUSIC_PATH = 'music'
 
 def sendOpn(clientSocket, cmd):
     clientSocket.send(cmd.encode('UTF-8').strip())
 
+def isEmpty(path):
+    for f in os.listdir(path):
+        f = f.lower()
+        if f.endswith('.mp3') or f.endswith('.flac') or f.endswith('.ogg') or f.endswith('.aac') or f.endswith('.wav'):
+            return False
+    return True
+
 class Main(QMainWindow, Ui_Main):
-    def __init__(self, host, port, maxClients, parent=None ):
+    def __init__(self, host, parent=None ):
         super(Main, self).__init__(parent)
         self.clients = []
-
-        # listing out files in the music directory
-        self.musicFiles = []
-        for f in os.listdir(MUSIC_PATH):
-            if os.path.isfile(os.path.join(MUSIC_PATH, f)):
-                f = f.lower()
-                if f.endswith('.mp3') or f.endswith('.flac') or f.endswith('.ogg') or f.endswith('.aac') or f.endswith('.wav'):
-                    self.musicFiles.append(f)
-        self.setupUi(self, host, port, maxClients)
+        self.setupUi(self, host)
 
         # action to main next button
         self.nextBtn.clicked.connect(self.decideNode)
+
+        # action to the server's next btn
+        self.sNextBtn.clicked.connect(self.startServer)
+
+        # action to the connect button on client
+        self.cntBtn.clicked.connect(self.attemptConnection)
+
+    def startServer(self):
+        self.maxClients = self.sIBox.value()
+        self.sPort = self.sIPortVal.value()
+        self.finishUI()
 
         # action to the proceed button on server
         self.proBtn.clicked.connect(self.clientList)
@@ -44,8 +54,8 @@ class Main(QMainWindow, Ui_Main):
         self.stopBtn.clicked.connect(self.stop)
         self.endBtn.clicked.connect(self.end)
 
-        # action to the connect button on client
-        self.cntBtn.clicked.connect(self.attemptConnection)
+        self.QtStack.setCurrentIndex(3)
+        start_new_thread(self.startListening, ())
 
     def backToClients(self):
         for c in self.clients:
@@ -67,7 +77,7 @@ class Main(QMainWindow, Ui_Main):
                 f = open(os.path.join(MUSIC_PATH, self.cFVmusicBox.currentText()), 'rb')
                 file_content = f.read(110241024)
                 c[0].sendall(file_content)
-        self.QtStack.setCurrentIndex(5)
+        self.QtStack.setCurrentIndex(6)
 
     def checkFile(self):
         self.fileToBePlayed = self.cS.recv(1000).decode()
@@ -82,6 +92,11 @@ class Main(QMainWindow, Ui_Main):
         pygame.mixer.music.load(os.path.join(MUSIC_PATH, self.fileToBePlayed))
 
     def keepReceiving(self):
+        # create the music directory if not present
+        if not os.path.isdir(MUSIC_PATH):
+            os.makedirs(MUSIC_PATH)
+
+        # check if the music to be played is present at the client's end
         self.checkFile()
         while True:
             received = self.cS.recv(200).decode()
@@ -142,7 +157,7 @@ class Main(QMainWindow, Ui_Main):
 
     def clientList(self):
         if len(self.clients)!=0:
-            self.QtStack.setCurrentIndex(4)
+            self.QtStack.setCurrentIndex(5)
             for i,c in enumerate(self.clients):
                 self.clientLabels[i].setText(f"Connected with {c[1]}, allotted ID={i+1}")
 
@@ -152,7 +167,7 @@ class Main(QMainWindow, Ui_Main):
         self.cS = socket.socket()
         self.cS.connect((host, port))
         self.cS.recv(1024)
-        self.QtStack.setCurrentIndex(3)
+        self.QtStack.setCurrentIndex(4)
         start_new_thread(self.keepReceiving, ())
 
     def decideNode(self):
@@ -175,8 +190,24 @@ class Main(QMainWindow, Ui_Main):
         return
 
     def server(self):
-        self.QtStack.setCurrentIndex(1)
-        start_new_thread(self.startListening, ())
+        if not os.path.isdir(MUSIC_PATH):
+            os.makedirs(MUSIC_PATH)
+            self.eMsg.setText("Music folder has been created. Add music to it.")
+            self.QtStack.setCurrentIndex(7)
+        
+        elif isEmpty(MUSIC_PATH):
+            self.eMsg.setText("Add some music to the 'music/' folder")
+            self.QtStack.setCurrentIndex(7)
+
+        else:
+            # listing out files in the music directory
+            self.musicFiles = []
+            for f in os.listdir(MUSIC_PATH):
+                if os.path.isfile(os.path.join(MUSIC_PATH, f)):
+                    f = f.lower()
+                    if f.endswith('.mp3') or f.endswith('.flac') or f.endswith('.ogg') or f.endswith('.aac') or f.endswith('.wav'):
+                        self.musicFiles.append(f)
+            self.QtStack.setCurrentIndex(1)
 
     def client(self):
         self.QtStack.setCurrentIndex(2)
@@ -187,5 +218,5 @@ pygame.mixer.init()
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
-    showMain = Main(socket.gethostname(), PORT, MAX_CLIENTS)
+    showMain = Main(socket.gethostname())
     sys.exit(app.exec_())
